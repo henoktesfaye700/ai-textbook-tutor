@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.6
+pypdf>=5.0          # import PDFs
+pypdfium2>=4.30     # page previews with highlighted words
+pillow>=10.0        # page previews
+reportlab>=4.0      # PDF reports
+# optional, for an on-device language model: llama-cpp-python
