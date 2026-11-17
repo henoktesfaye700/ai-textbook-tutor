@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Textbook Tutor: library</title>
+<style>
+:root{--bg:#f2f6f5;--sf:#fff;--tx:#14262b;--mu:#5a6e72;--ac:#0f4c5c;--bad:#b3402f;--ok:#2f7d4f;--ln:#d5e0de}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1a1d;--sf:#16272b;--tx:#e6efee;--mu:#93a9ac;--ac:#6cc1d4;--bad:#f08a78;--ok:#6fcf97;--ln:#27403f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}h1{margin:0}.mu{color:var(--mu);font-size:13px}
+.box{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:14px;margin:12px 0;overflow-x:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+input,select,button{padding:9px;border-radius:8px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font:inherit}
+button{cursor:pointer}button.go{background:var(--ac);color:var(--bg);border:0;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln);white-space:nowrap}
+#msg{min-height:22px;margin-top:6px}.err{color:var(--bad)}.okc{color:var(--ok)}a{color:var(--ac)}
+</style></head><body><main>
+<p><a href="/teacher">&larr; Dashboard</a></p>
+<h1>Library</h1>
+<p class="mu">Upload text-based PDF or EPUB books (you can select the text with a mouse). Use only books you have the right to share:
+students will see excerpts and can open the PDF pages. Scanned books are not supported yet.</p>
+<form id="up" class="box">
+ <div class="row"><input type="file" id="file" accept=".pdf,.epub" required></div>
+ <div class="row">
+  <input id="subject" placeholder="Subject, e.g. biology" required>
+  <input id="grade" type="number" min="0" max="12" placeholder="Grade, e.g. 8" style="width:130px">
+  <select id="lang" aria-label="Language"><option value="en">English</option><option value="am">Amharic</option>
+   <option value="om">Afan Oromo</option><option value="so">Somali</option><option value="ti">Tigrinya</option></select>
+  <input id="title" placeholder="Title (optional)">
+ </div>
+ <button class="go" type="submit">Upload and import</button><div id="msg" role="status"></div>
+</form>
+<div class="box"><table id="books"></table></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function api(path,opts){
+  const r=await fetch(path,opts);
+  if(r.status===401){location.href="/login";throw new Error("Please log in");}
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.detail||("Error "+r.status));
+  return d;
+}
+function say(text,cls){const m=$("#msg");m.className=cls||"mu";m.textContent=text;}
+async function load(){
+  try{
+    const d=await api("/admin/books");
+    $("#books").innerHTML="<tr><th>File</th><th>Subject</th><th>Grade</th><th>Language</th><th>Passages</th><th>Size</th><th></th></tr>"+
+      (d.books.map(b=>`<tr><td>${esc(b.file)}</td><td>${esc(b.subject)}</td><td>${esc(b.grade||"")}</td><td>${esc(b.lang)}</td>
+        <td>${b.passages}</td><td>${b.size_mb<0.1?"<0.1":b.size_mb} MB</td><td><button data-f="${esc(b.file)}">Delete</button></td></tr>`).join("")||
+      '<tr><td colspan="7" class="mu">No books yet. Upload one above.</td></tr>');
+    $("#books").querySelectorAll("button[data-f]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("Delete "+b.dataset.f+"? Students will no longer get answers from it."))return;
+      try{await api("/admin/books/"+encodeURIComponent(b.dataset.f),{method:"DELETE"});say("Deleted.","okc");load();}
+      catch(e){say(e.message,"err");}
+    });
+  }catch(e){say(e.message,"err");}
+}
+$("#up").onsubmit=async e=>{
+  e.preventDefault();
+  const f=$("#file").files[0];if(!f)return;
+  say("Uploading and importing... large books can take a minute.");
+  const q=new URLSearchParams({subject:$("#subject").value,grade:$("#grade").value||0,lang:$("#lang").value,title:$("#title").value});
+  try{
+    const d=await api("/admin/books/"+encodeURIComponent(f.name)+"?"+q,{method:"PUT",body:f});
+    say(`Imported ${d.passages} passages from ${d.file}.`,"okc");$("#up").reset();load();
+  }catch(x){say(x.message,"err");}
+};
+load();
+</script></main></body></html>
