@@ -1,0 +1,15 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+*.db
+*.gguf
+# your books (often copyrighted), imported data, uploads and packs stay out of Git
+books/*
+!books/.gitkeep
+data/*
+!data/.gitkeep
+outbox.json
+*.tutorpack
+build/
+dist/
