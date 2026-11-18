@@ -240,12 +240,4 @@ $ python scripts/evaluate.py --passages data/passages.jsonl --questions data/eva
 
 Each line of the questions file looks like `{"q": "How do plants make food?", "topic": "Chapter 1: Photosynthesis"}`.
 
-## Limitations
 
-- Scanned books are not supported yet and need OCR first.
-- Search is keyword based, so a question that shares no words with the book can be missed.
-- At least a few passages (about one chapter) are needed before the tutor answers.
-- Small language models are weak in Amharic, Afan Oromo and Somali. The textbook check compares words, so answer in the language of the book.
-- The language model integration has been tested with a stand-in for llama.cpp, not with a real model.
-- The web pages were tested with scripts against a running server, not in a browser. The Dockerfile, the public link from Colab and hosting on the internet have not been tested.
-- Serve the site over HTTPS when it is reachable from the internet.
